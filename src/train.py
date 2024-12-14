@@ -22,8 +22,18 @@ RESULTS_FILE = 'results.txt'
 LAST_MODEL = os.path.join(WEIGHTS_DIR, 'last.pt')
 BEST_MODEL = os.path.join(WEIGHTS_DIR, 'best.pt')
 
+# Global values
+mixed_precision = None
+hyp = None
+conf = None
+yolo_props = None
+freeze, alpha = None, None
+device = None    
+tb_writer = None
+
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
 
 def setup_mixed_precision():
     try:
@@ -70,35 +80,13 @@ def get_freeze_alpha_values(conf):
         freeze[layer], alpha[layer] = (True, 0) if conf.get("freeze", layer) == "True" else (False, 1)
     return freeze, alpha
 
-def get_parser():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--epochs', type=int, default=300, help='Number of epochs')
-    parser.add_argument('--batch-size', type=int, default=16, help='Batch size')
-    parser.add_argument('--accumulate', type=int, default=4, help='Batches to accumulate before optimizing')
-    parser.add_argument('--cfg', type=str, default='cfg/mde.cfg', help='Path to configuration file')
-    parser.add_argument('--data', type=str, default='data/coco2017.data', help='Path to data file')
-    parser.add_argument('--multi-scale', action='store_true', help='Adjust image size every 10 batches')
-    parser.add_argument('--img-size', nargs='+', type=int, default=[512], help='Image sizes (min_train, max_train, test)')
-    parser.add_argument('--rect', action='store_true', help='Rectangular training')
-    parser.add_argument('--resume', action='store_true', help='Resume training from last checkpoint')
-    parser.add_argument('--nosave', action='store_true', help='Only save final checkpoint')
-    parser.add_argument('--notest', action='store_true', help='Only test final epoch')
-    parser.add_argument('--evolve', action='store_true', help='Evolve hyperparameters')
-    parser.add_argument('--bucket', type=str, default='', help='GSutil bucket')
-    parser.add_argument('--cache-images', action='store_true', help='Cache images for faster training')
-    parser.add_argument('--weights', type=str, default='weights/best.pt', help='Initial weights path')
-    parser.add_argument('--name', default='', help='Rename results file if supplied')
-    parser.add_argument('--device', default='', help='Device ID (e.g., 0, 0,1, or cpu)')
-    parser.add_argument('--adam', action='store_true', help='Use Adam optimizer')
-    parser.add_argument('--single-cls', action='store_true', help='Train as single-class dataset')
-    return parser
-
 
 def extend_img_size(opt):
     opt.img_size.extend([opt.img_size[-1]] * (3 - len(opt.img_size)))  # Extend to 3 sizes (min, max, test)
 
 
 def select_device_and_precision(opt):
+    global mixed_precision
     device = torch_utils.select_device(opt.device, apex=mixed_precision, batch_size=opt.batch_size)
     if device.type == 'cpu':
         mixed_precision = False
@@ -151,7 +139,7 @@ def clip_hyperparameters(hyp, limits):
 
 
 
-def train():
+def train(opt):
     def initialize_optimizer(model, opt, hyp):
         # Optimizer parameter groups
         pg0, pg1, pg2 = [], [], []
@@ -495,29 +483,43 @@ def train():
 
     return results
 
-
-# Global values
-mixed_precision = setup_mixed_precision()
-hyp = load_hyperparameters()
-log_focal_loss(hyp)
-conf = read_config()
-yolo_props = get_yolo_properties(conf)
-freeze, alpha = get_freeze_alpha_values(conf)
-
-if __name__ == '__main__':    
-    parser = get_parser()
-    opt = parser.parse_args()
-
-    opt.weights = 'last.pt' if opt.resume else opt.weights
+    
+def main(params):
+    
+    #Getting received parameters
+    opt = ConfigNamespace(params)
     print(opt)
 
-    extend_img_size(opt)
-    device = select_device_and_precision(opt)
+    #Defining initial values for global values
+    global mixed_precision
+    mixed_precision = setup_mixed_precision()
+
+    global hyp
+    hyp = load_hyperparameters()    
+        
+    global conf
+    conf = read_config()
+
+    global yolo_props
+    yolo_props = get_yolo_properties(conf)
     
+    global freeze, alpha 
+    freeze, alpha = get_freeze_alpha_values(conf) 
+
+    global device
+    device = select_device_and_precision(opt)    
+    
+    global tb_writer
     tb_writer = initialize_tensorboard(opt)
 
+    #Altering based on parameter values
+    log_focal_loss(hyp)
+    opt.weights = 'last.pt' if opt.resume else opt.weights
+    extend_img_size(opt)
+    
+
     if not opt.evolve:
-        train()  # Train normally
+        train(opt)  # Train normally
     else:
         opt.notest, opt.nosave = True, True  # Only test/save final epoch
         download_evolve_file(opt)
@@ -534,3 +536,4 @@ if __name__ == '__main__':
                 results = train()  # Train mutation
                 print_mutation(hyp, results, opt.bucket)
                 # plot_evolution_results(hyp)
+    
