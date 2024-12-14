@@ -19,7 +19,14 @@ The model is trained on Construction Safety Gear Data which can be found here ht
 
 Place the data inside `data/customdata/custom.data` folder
 
-`python3.6 main.py train --data data/customdata/custom.data --batch 8 --cache --cfg cfg/mde.conf --epochs 50 --img-size 512`
+To train the model run the following command, it will train the model with default configurations mentioned in `cfg/config.ini` file
+
+
+`python3.6 main.py train`
+
+or to use the personlized another config file
+
+`python3.6 main.py train --config cfg/config.ini`
 
 Please refer the config file `cfg/mde.cfg` to change the network configuration, freeze different branches. The model is an extension of YOLOv3 and MiDaS networks. Most of the configurations can be understood if familiar with
 
@@ -29,11 +36,17 @@ Please refer the config file `cfg/mde.cfg` to change the network configuration, 
 
 ## Inference
 
-Download the weights from https://drive.google.com/drive/u/2/folders/11p7hhea2Y1FK_T5_P3W271V76IKigcUD and place it under `weights` folder
+Download the weights from https://drive.google.com/drive/u/2/folders/11p7hhea2Y1FK_T5_P3W271V76IKigcUD and place it under `weights` folder. If not available can be checked in https://github.com/AlexeyAB/MiDaS
 
-Place the images on which inference need to be run, inside `input` folder
 
-`python3.6 main.py detect --source input --conf-thres 0.1 --output output --weights weights/best.pt`
+Place the images on which inference need to be run, inside `input` folder. It will run the inference on all the images placed inside the folder with deafult config file `cfg/config.ini`.
+
+
+`python3.6 main.py detect`
+
+or to use the personlized another config file
+
+`python3.6 main.py detect --config cfg/config.ini`
 
 The inferred images will be stored inside `output` folder
 
