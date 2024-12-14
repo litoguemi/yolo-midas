@@ -2,9 +2,9 @@ import argparse
 import configparser as cp
 from sys import platform
 
-from model.mde_net import *  # set ONNX_EXPORT in models.py
-from model.monocular_depth_estimation_dataset import *
-from utils.utils import *
+from src.model.mde_net import *  # set ONNX_EXPORT in models.py
+from src.model.monocular_depth_estimation_dataset import *
+from src.utils.utils import *
 
 # Configuration setup
 conf_path = "cfg/mde.cfg"
@@ -24,26 +24,6 @@ def get_freeze_alpha_values(conf):
     for layer in layers:
         freeze[layer], alpha[layer] = (True, 0) if conf.get("freeze", layer) == "True" else (False, 1)
     return freeze, alpha
-
-def get_parser():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--cfg', type=str, default='cfg/yolov3-custom.cfg', help='*.cfg path')
-    parser.add_argument('--names', type=str, default='data/customdata/custom.names', help='*.names path')
-    parser.add_argument('--weights', type=str, default='weights/last.pt', help='weights path')
-    parser.add_argument('--source', type=str, default='data/customdata/images', help='source')  # input file/folder, 0 for webcam
-    parser.add_argument('--output', type=str, default='output', help='output folder')  # output folder
-    parser.add_argument('--img-size', type=int, default=512, help='inference size (pixels)')
-    parser.add_argument('--conf-thres', type=float, default=0.3, help='object confidence threshold')
-    parser.add_argument('--iou-thres', type=float, default=0.6, help='IOU threshold for NMS')
-    parser.add_argument('--fourcc', type=str, default='mp4v', help='output video codec (verify ffmpeg support)')
-    parser.add_argument('--half', action='store_true', help='half precision FP16 inference')
-    parser.add_argument('--device', default='', help='device id (i.e. 0 or 0,1) or cpu')
-    parser.add_argument('--view-img', action='store_true', help='display results')
-    parser.add_argument('--save-txt', action='store_true', help='save results to *.txt')
-    parser.add_argument('--classes', nargs='+', type=int, help='filter by class')
-    parser.add_argument('--agnostic-nms', action='store_true', help='class-agnostic NMS')
-    parser.add_argument('--augment', action='store_true', help='augmented inference')
-    return parser
 
 
 def initialize_device(opt):
@@ -70,6 +50,7 @@ def get_names_colors(names_path):
     return names, colors
 
 def run_inference(model, img, half, device):
+    img = torch.from_numpy(img)
     img = img.to(device)
     img = img.half() if half else img.float()  # uint8 to fp16/32
     img /= 255.0  # 0 - 255 to 0.0 - 1.0
@@ -79,6 +60,7 @@ def run_inference(model, img, half, device):
     return depth_pred, pred
 
 def detect(opt):    
+    global conf
     yolo_props = get_yolo_properties(conf)
     freeze, alpha = get_freeze_alpha_values(conf)
     device = initialize_device(opt)
@@ -150,8 +132,8 @@ def detect(opt):
 
 
 def main(params):
-    parser = get_parser()
-    opt = parser.parse_args([f'--{key}={value}' for key, value in params.items()])
+    #Getting received parameters    
+    opt = ConfigNamespace(params)
     with torch.no_grad():
         detect(opt)
     

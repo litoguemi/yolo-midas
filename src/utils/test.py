@@ -4,10 +4,10 @@ import json
 import cv2
 from torch.utils.data import DataLoader
 
-from model.mde_net import *
-from model.monocular_depth_estimation_dataset import *
-from .utils import *
-from .parse_config import *
+from src.model.mde_net import *
+from src.model.monocular_depth_estimation_dataset import *
+from src.utils import *
+from src.utils.parse_config import *
 
 from torch import nn
 

@@ -1,9 +1,9 @@
 import torch
 from torch import nn
-from utils.google_utils import *
-from model.blocks import FeatureFusionBlock, Interpolate, _make_encoder
-from utils.parse_config import *
-from utils import torch_utils
+from src.utils.google_utils import *
+from src.model.blocks import FeatureFusionBlock, Interpolate, _make_encoder
+from src.utils.parse_config import *
+from src.utils import torch_utils
 
 ONNX_EXPORT = False
 

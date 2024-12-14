@@ -6,11 +6,12 @@ import torch.distributed as dist
 import torch.optim as optim
 import torch.optim.lr_scheduler as lr_scheduler
 
-from utils import test  # import test.py to get mAP after each epoch
-from model.mde_net import MDENet
-from model.monocular_depth_estimation_dataset import *
-from utils.utils import *
-from utils.parse_config import *
+from src.utils import test  # import test.py to get mAP after each epoch
+from src.model.mde_net import MDENet
+from src.model.monocular_depth_estimation_dataset import *
+from src.utils.utils import *
+from src.utils.parse_config import *
+from src.utils import torch_utils
 from torch.utils.tensorboard import SummaryWriter
 
 # Constants
@@ -80,14 +81,14 @@ def get_freeze_alpha_values(conf):
         freeze[layer], alpha[layer] = (True, 0) if conf.get("freeze", layer) == "True" else (False, 1)
     return freeze, alpha
 
-
 def extend_img_size(opt):
+    opt.img_size = [opt.img_size] * 3
     opt.img_size.extend([opt.img_size[-1]] * (3 - len(opt.img_size)))  # Extend to 3 sizes (min, max, test)
 
 
 def select_device_and_precision(opt):
     global mixed_precision
-    device = torch_utils.select_device(opt.device, apex=mixed_precision, batch_size=opt.batch_size)
+    device = torch_utils.select_device(opt.device , apex=mixed_precision, batch_size=opt.batch_size)
     if device.type == 'cpu':
         mixed_precision = False
     return device
@@ -486,7 +487,7 @@ def train(opt):
     
 def main(params):
     
-    #Getting received parameters
+    #Getting received parameters    
     opt = ConfigNamespace(params)
     print(opt)
 

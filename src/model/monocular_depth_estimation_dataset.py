@@ -15,8 +15,8 @@ from torchvision.transforms import Compose
 from torch.utils.data import Dataset
 from tqdm import tqdm
 
-from utils.utils import xyxy2xywh, xywh2xyxy
-from utils.transforms import Resize, NormalizeImage, PrepareForNet
+from src.utils.utils import xyxy2xywh, xywh2xyxy
+from src.utils.transforms import Resize, NormalizeImage, PrepareForNet
 
 help_url = 'https://github.com/ultralytics/yolov3/wiki/Train-Custom-Data'
 img_formats = ['.bmp', '.jpg', '.jpeg', '.png', '.tif', '.dng']

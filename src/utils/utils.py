@@ -16,6 +16,7 @@ import torchvision
 from tqdm import tqdm
 import torch.nn.functional as F
 from torch import nn
+#from pytorch_ssim import pytorch_ssim
 
 from . import torch_utils  # , google_utils
 
@@ -1037,6 +1038,7 @@ def write_depth(path, depth, bits=1):
         cv2.imwrite(path + ".png", out.astype("uint16"))
 
     return
+
 
 class ConfigNamespace:
     def __init__(self, config_dict):
