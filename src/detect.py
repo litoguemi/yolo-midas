@@ -44,7 +44,10 @@ def set_dataloader(opt, img_size, source, save_img):
         dataset = LoadImages(source, img_size=img_size)
     return dataset, save_img
 
-def get_names_colors(names_path):
+def get_names_colors(names_path):    
+    '''
+    Rename the classes and assign random colors to them
+    '''
     names = load_classes(names_path)
     colors = [[random.randint(0, 255) for _ in range(3)] for _ in range(len(names))]
     return names, colors

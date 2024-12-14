@@ -43,7 +43,9 @@ def setup_mixed_precision():
     except ImportError:
         logging.warning(f'Apex not installed. Recommended for mixed precision and faster training: {MIXED_PRECISION_URL}')
         return False
-
+'''
+ Load the hyperparameters from the configuration file. If a hyperparameters file exists, use it. Otherwise, use the default values.
+'''
 def load_hyperparameters():
     hyp = {
         'giou': 3.54, 'cls': 37.4, 'cls_pw': 1.0, 'obj': 64.3, 'obj_pw': 1.0,
@@ -69,11 +71,16 @@ def read_config():
     conf.read(CONFIG_FILE)
     return conf
 
+
 def get_yolo_properties(conf):
+    '''
+    Load the model based on the configuration options. If a checkpoint file exists, load the model from the checkpoint. Otherwise, load the model from the YOLOv5 repository.
+    '''
     return {
         "anchors": np.array([float(x) for x in conf.get("yolo", "anchors").split(',')]).reshape((-1, 2)),
         "num_classes": conf.get("yolo", "classes")
     }
+
 
 def get_freeze_alpha_values(conf):
     freeze, alpha = {}, {}
@@ -81,7 +88,11 @@ def get_freeze_alpha_values(conf):
         freeze[layer], alpha[layer] = (True, 0) if conf.get("freeze", layer) == "True" else (False, 1)
     return freeze, alpha
 
+
 def extend_img_size(opt):
+    '''
+    Adjusts and extends the `img_size` attribute of the given `opt` object to ensure it contains exactly three values.
+    '''
     opt.img_size = [opt.img_size] * 3
     opt.img_size.extend([opt.img_size[-1]] * (3 - len(opt.img_size)))  # Extend to 3 sizes (min, max, test)
 
@@ -120,6 +131,9 @@ def select_parent(x, n, fitness, method='single'):
 
 
 def mutate_hyperparameters(x, hyp, method=3, mp=0.9, s=0.2):
+    '''
+    Mutate hyperparameters with probability `mp` by `s` standard deviations.
+    '''
     npr = np.random
     npr.seed(int(time.time()))
     g = np.array([1] * len(hyp))  # Gains
@@ -131,6 +145,12 @@ def mutate_hyperparameters(x, hyp, method=3, mp=0.9, s=0.2):
 
 
 def clip_hyperparameters(hyp, limits):
+    '''
+    Clip hyperparameters to limits. This is necessary to avoid errors in training. 
+    Args:
+        hyp (dict): Hyperparameters
+        limits (dict): Limits for each hyperparameter
+    '''
     keys = ['lr0', 'iou_t', 'momentum', 'weight_decay', 'hsv_s', 'hsv_v', 'translate', 'scale', 'fl_gamma']
     for k, v in zip(keys, limits):
         hyp[k] = np.clip(hyp[k], v[0], v[1])
@@ -267,6 +287,9 @@ def train(opt):
         return dataset, dataloader, testloader, nw
 
     def handle_burn_in(ni, n_burn, model, optimizer, lf, hyp):
+        '''
+        Handles the burn-in phase of training, where learning rates and momentum are adjusted
+        '''
         if ni <= n_burn * 2:
             model.gr = np.interp(ni, [0, n_burn * 2], [0.0, 1.0])
             if ni == n_burn:
@@ -420,7 +443,7 @@ def train(opt):
 
         return results, epoch, t0
 
-    def rename_and_upload_files(opt, wdir, results_file, epoch, start_epoch, t0):
+    def rename_and_upload_files(opt, wdir, results_file, epoch, start_epoch, t0):       
         n = opt.name
         if len(n):
             n = f'_{n}' if not n.isnumeric() else n
